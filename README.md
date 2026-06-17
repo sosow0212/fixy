@@ -1,83 +1,160 @@
 # fixy-agent
 
-> 팀이 함께 키우는 **자가개선형 개발 에이전트** (opencode 기반, TypeScript).
+> **팀이 함께 키우는 자가개선형 개발 에이전트** — opencode 기반 · TypeScript
 
-`@fixy` 가 프론트·백엔드·인프라 작업을 직접 수행하고, 받은 **불만·교정을 학습**해 스킬로 영속화한 뒤 **GitHub PR 로 팀과 공유**한다. 지식은 수박게임처럼 작은 개인 관찰(L1)에서 시작해, 쌓이면 팀 공통 규칙(L5)으로 합쳐진다.
-
-## 핵심 아이디어 — 수박게임 레벨
+`@fixy` 는 평범한 코딩 에이전트처럼 프론트·백엔드·인프라 작업을 수행합니다. 다른 점은 **일하면서 배운다**는 것입니다. 당신이 "아니 그게 아니라…"라고 지적하면 그 교훈을 기록하고, 같은 류가 쌓이면 재사용 가능한 **스킬**로 만들어 **GitHub PR 로 팀과 공유**합니다. 시간이 지날수록 팀 전체가 같은 실수를 반복하지 않게 됩니다.
 
 ```
- L1 에피소드 ──쌓이면──▶ L2 스킬 ──자주 쓰이면──▶ L3 공통 스킬 ──모이면──▶ L4 규칙 ──▶ L5 코어
-   (개인/로컬)            (개인→팀 PR)        (팀)               (사람승인)      (전 팀원)
+        당신의 피드백              fixy 의 학습                     팀의 자산
+   "또 날짜를 MM/DD 로 했네"  →  L1 기록 → 반복되면 L2 스킬  →  PR 로 공유 → 모두가 사용
 ```
 
-| 레벨 | 무엇 | 어디 | 공유 |
-|---|---|---|---|
-| **L1** | 매 작업·불만·교정 자동 기록 | `memory/episodes.jsonl` | ❌ 로컬 |
-| **L2** | 유사 L1 이 쌓이면 스킬화 | `.opencode/skills/<name>/SKILL.md` | ✅ 포크 PR |
-| **L3** | 자주 재사용되면 팀 공통 | `.opencode/skills/` (team) | ✅ PR |
-| **L4** | 한 주제로 모이면 규칙 | `.opencode/rules/team-*.md` | ✅ PR + 승인 |
-| **L5** | 안정화된 코어 헌법 | `.opencode/rules/core.md` | ✅ PR + 승인 |
+---
 
-자세히: [docs/levels.md](docs/levels.md)
+## 한눈에
+
+- 🛠 **개발을 직접 수행** — 신규 기능, 버그 수정, 리팩토링, 코드 리뷰 (프론트/백엔드/인프라)
+- 📈 **피드백으로 성장** — 불만·교정을 자동 기록하고, 반복되면 스킬·규칙으로 **승급(promote)**
+- 🤝 **팀과 공유** — 학습한 스킬을 GitHub 포크 PR 로 올려 팀원·조직과 나눔 (시크릿 스캔 통과 필수)
+- 🔒 **안전 우선** — 개인 기록은 로컬에만, 공유 전 시크릿 차단, 핵심 규칙 변경은 사람 승인
+- 🪶 **가볍게 공존** — 기존 opencode 설정(oh-my-openagent 등)을 건드리지 않고 추가 설치
+
+---
+
+## 핵심 — 레벨 승급 개선 시스템 (L1 → L5)
+
+지식을 한 번에 "스킬"로 박제하면 비슷한 스킬이 난립해 무엇을 신뢰할지 알 수 없게 됩니다.
+fixy 는 대신 **증거가 쌓인 만큼 신뢰도를 올립니다.** 한 번 본 것은 가볍게(L1), 반복 검증된 것은 무겁게(L5) 다룹니다. 낮은 레벨이 임계치만큼 쌓이면 다음 레벨로 **승급**되고, 올라갈수록 개인적·임시에서 팀 공통·영속으로 바뀝니다.
+
+```
+  L1 에피소드 ──(유사한 게 쌓이면)──▶ L2 스킬 ──(자주 재사용)──▶ L3 공통 스킬
+   매 작업 자동 기록                     절차/런북                     팀이 함께 쓰는 스킬
+   (개인·로컬)                          (개인→포크 PR)                (팀)
+                                                                        │
+                                                              (한 주제로 모이면)
+                                                                        ▼
+                                              L4 팀 규칙 ──(안정화)──▶ L5 코어 헌법
+                                              (사람 승인)              (전 팀원·사람 승인)
+```
+
+| 레벨 | 무엇 | 저장 위치 | 범위 | 공유 |
+|---|---|---|---|---|
+| **L1** 에피소드 | 매 작업·불만·교정을 자동 기록 | `memory/episodes.jsonl` | 개인·로컬 | ❌ |
+| **L2** 스킬 | 유사 L1 이 쌓이면 절차로 정리 | `.opencode/skills/<name>/SKILL.md` | 개인→팀 | ✅ 포크 PR |
+| **L3** 공통 스킬 | 자주 재사용되면 팀 공통으로 | `.opencode/skills/` (team) | 팀 | ✅ PR |
+| **L4** 규칙 | 한 주제로 L3 가 모이면 규칙화 | `.opencode/rules/team-*.md` | 팀 | ✅ PR + 승인 |
+| **L5** 코어 | 안정화된 불변 원칙 | `.opencode/rules/core.md` | 전 팀원 | ✅ PR + 승인 |
+
+→ 개념과 임계치 조정: **[docs/levels.md](docs/levels.md)**
+
+---
+
+## 학습이 일어나는 과정 (실제 예시)
+
+```text
+① @fixy 주문 목록 API 만들어줘
+   → fixy 가 구현. 근데 날짜를 "MM/DD/YYYY" 로 응답함
+
+② @fixy 아니 날짜는 한국식 "YYYY-MM-DD" 로 해줘
+   → 'correction'(교정) 신호로 L1 자동 기록 + fixy 가 고치고 교훈을 fixy_note 로 핀
+
+   … 며칠 뒤, 비슷한 날짜 교정이 두 번 더 쌓임 (총 3건) …
+
+③ /fixy-evolve
+   → fixy_digest 가 "날짜 포맷" 클러스터를 감지 → fixy_promote 로
+     "api-date-format" L2 스킬 생성 (언제·어떻게를 단계별로 기록)
+
+④ /fixy-share
+   → 시크릿 스캔 통과 후 fixy/skill-… 브랜치 + 포크 PR 생성
+   → 팀원이 머지하면 모두의 fixy 가 이 스킬을 갖게 됨
+
+   … 이 스킬이 5번 재사용되면 …
+
+⑤ /fixy-level-up api-date-format
+   → L3(팀 공통)로 승급. 이제 "응답 날짜 포맷" 같은 규칙(L4)으로 묶을 후보가 됨
+```
+
+이후 `@fixy` 는 새 API 작업 전 `fixy_recall` 로 이 스킬을 먼저 떠올려, **같은 지적을 두 번 받지 않습니다.**
+
+---
 
 ## 설치
 
+필요: **bun ≥ 1.2**, **opencode ≥ 1.17**, **gh**(공유 기능용), git.
+
 ```bash
-# bun + opencode + gh 가 필요합니다.
 git clone <당신의-포크-URL> ~/.fixy-agent
 cd ~/.fixy-agent && bash install.sh
-
-# 학습물 공유를 쓰려면:
-gh auth login                              # GitHub 인증
-# fixy.config.json 의 repo.fork / repo.upstream 을 "owner/name" 으로 채우기
 ```
 
-설치는 에이전트·커맨드·플러그인·스킬을 전역 `~/.config/opencode` 에 **심볼릭 링크**한다.
-기존 opencode 설정(`opencode.jsonc`, oh-my-openagent 등)은 **건드리지 않는다**. 자세히: [docs/install.md](docs/install.md)
+설치는 에이전트·커맨드·플러그인·스킬을 전역 `~/.config/opencode` 에 **심볼릭 링크**하고 설치내역(`.install-manifest.json`)을 남깁니다. 기존 opencode 설정은 **건드리지 않습니다.**
+
+→ 전체 절차·환경변수·문제 해결: **[docs/install.md](docs/install.md)**
+
+---
 
 ## 빠른 시작
 
 ```bash
-cd ~/projects/my-app
-opencode
+cd ~/projects/my-app && opencode
 
-@fixy 로그인 폼에 이메일 검증 추가해줘        # 신규 기능
-@fixy 결제 시 500 에러 나는데 봐줘 [스택]      # 디버깅
-/fixy-status                                  # 학습 파이프라인 현황
-/fixy-evolve                                  # L1 → L2 스킬 승급
-/fixy-share                                   # 학습 스킬 PR 공유
+@fixy 로그인 폼에 이메일 검증 추가해줘          # 신규 기능 (자동으로 recall→구현→검증)
+@fixy 결제 콜백에서 가끔 중복 처리돼 [스택]      # 디버깅 (런북 기록)
+/fixy-status                                  # 지금까지 무엇을 배웠나
+/fixy-evolve                                  # 쌓인 기록을 스킬로 승급
+/fixy-share                                   # 학습 스킬을 팀에 PR
 ```
 
-`@fixy` 는 작업 전 `fixy_recall` 로 과거 학습을 떠올리고, 불만/교정을 받으면 `fixy_note` 로 기록한다. 기록이 쌓이면 `/fixy-evolve` 가 스킬로 합치고, `/fixy-share` 가 PR 로 팀에 공유한다.
+→ 시나리오별 사용법·FAQ: **[docs/usage.md](docs/usage.md)**
+
+---
 
 ## 커맨드
 
-| 커맨드 | 설명 |
+| 커맨드 | 하는 일 |
 |---|---|
-| `/fixy-feature <설명>` | 컨벤션 기반 신규 기능 개발 |
-| `/fixy-fix <에러>` | 디버깅 후 런북 기록 |
-| `/fixy-review <대상>` | 변경 독립 검증 (`@fixy-reviewer`) |
-| `/fixy-evolve` | 아우터 루프: L1 → L2 스킬 승급 |
-| `/fixy-level-up <대상>` | 메타 루프: L2→L3, L3→L4/L5 (사람 승인) |
-| `/fixy-share [스킬]` | 학습물 포크 PR 공유 |
-| `/fixy-status` | 레벨 파이프라인 현황 |
+| `/fixy-feature <설명>` | 기존 컨벤션을 따르는 신규 기능 개발 + 검증 |
+| `/fixy-fix <에러/로그>` | 체계적 디버깅 후 재발 방지 런북 기록 |
+| `/fixy-review <대상>` | 변경(diff)을 `@fixy-reviewer` 로 독립 검증 |
+| `/fixy-status` | 레벨 파이프라인 현황 (어디까지 학습/공유됐나) |
+| `/fixy-evolve` | **아우터 루프** — L1 기록을 L2 스킬로 승급 |
+| `/fixy-level-up [대상]` | **메타 루프** — L2→L3, L3→L4/L5 (규칙·코어는 사람 승인) |
+| `/fixy-share [스킬]` | 학습물을 포크 PR 로 공유 |
 
-## 구성
+## 네이티브 도구 (LLM 토큰 0)
 
-- **에이전트**: `fixy`(메인) · `fixy-reviewer`(읽기 전용 검증)
-- **네이티브 툴**(토큰 0): `fixy_recall` · `fixy_note` · `fixy_status` · `fixy_digest` · `fixy_promote` · `fixy_levelup` · `fixy_share`
-- **플러그인**: `fixy-recorder`(이너 루프 자동 기록) · `fixy-tools`(툴) · `fixy-autoshare`(자동 공유, 기본 OFF)
-- **규칙**: `core.md`(L5) · `self-improvement.md`(레벨 규약)
-- **기본 스킬**(L3): conventional-commits · systematic-debugging · code-review-checklist
+`fixy_recall`(과거 학습 검색) · `fixy_note`(즉시 기록) · `fixy_status`(현황) · `fixy_digest`(승급 후보) · `fixy_promote`(L1→L2) · `fixy_levelup`(L2→L3) · `fixy_share`(PR 공유)
+
+## 에이전트
+
+- **`@fixy`** (primary) — 개발 + 학습. 유일한 진입점.
+- **`@fixy-reviewer`** (subagent) — 읽기 전용 독립 검증. 자기 코드를 자기가 승인하지 않도록 생성/검증을 분리.
+
+---
+
+## 안전장치
+
+| 위험 | 방어 |
+|---|---|
+| 시크릿 유출 | 스킬 작성·모든 PR 공유 전 **시크릿 스캐너** 강제 (발견 시 차단) |
+| 개인 기록 노출 | L1 `episodes.jsonl` 은 `.gitignore` — 공유되는 건 L2+ 스킬·규칙뿐 |
+| 깜짝 PR | 공유 대상(fork/upstream) 미설정 시 **명확히 중단** — 엉뚱한 레포로 안 나감 |
+| 무분별한 규칙 변경 | L4(규칙)·L5(코어)는 자동 적용 금지 — 항상 제안 → **사람 승인** → 적용 |
+| 기존 환경 훼손 | 설치는 추가 링크만, 제거는 우리 링크만 — 사용자 설정 불변 |
+
+---
 
 ## 문서
 
-- [아키텍처](docs/architecture.md) · [레벨 시스템](docs/levels.md) · [설치](docs/install.md) · [사용법](docs/usage.md)
+- **[레벨 시스템](docs/levels.md)** — 왜 레벨을 나누나, 각 레벨·임계치·승급 규칙
+- **[아키텍처](docs/architecture.md)** — 설계 원칙, opencode 매핑, 3중 루프, 토큰 효율
+- **[설치 가이드](docs/install.md)** — 사전 요구사항, 단계별 설치, 환경변수, 문제 해결
+- **[사용법](docs/usage.md)** — 시나리오별 사용법, 커맨드 레퍼런스, FAQ
+- **[레포 작업 개요(AGENTS.md)](AGENTS.md)** — fixy-agent 자체를 개발할 때
 
-## 제거 / 업데이트
+## 업데이트 / 제거
 
 ```bash
-cd ~/.fixy-agent && bash update.sh      # 최신화 + 재링크
-cd ~/.fixy-agent && bash uninstall.sh   # 우리 링크만 제거(설정은 보존)
+cd ~/.fixy-agent && bash update.sh      # git pull + 재링크
+cd ~/.fixy-agent && bash uninstall.sh   # 우리 링크만 제거 (설정·개인기록 보존)
 ```
