@@ -23,23 +23,26 @@ const PATTERNS: { kind: string; re: RegExp }[] = [
   { kind: "private-key", re: /-----BEGIN (RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----/ },
   { kind: "jwt", re: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/ },
   { kind: "bearer-token", re: /\bBearer\s+[A-Za-z0-9._~+/-]{20,}=*/ },
-  { kind: "generic-secret", re: /\b(api[_-]?key|secret|token|password|passwd|pwd)\s*[=:]\s*['"][^'"\s]{12,}['"]/i },
+  // 따옴표 유무 모두 탐지: .env/YAML/shell 의 비따옴표 대입이 실제 유출 주형이다.
+  { kind: "generic-secret", re: /\b(api[_-]?key|secret|token|password|passwd|pwd)\s*[=:]\s*(?:['"][^'"\s]{8,}['"]|[^\s'"]{12,})/i },
   { kind: "slack-webhook", re: /https:\/\/hooks\.slack\.com\/services\/[A-Za-z0-9/]+/ },
-  { kind: "private-host", re: /\b[a-z0-9.-]+\.(internal|corp|local|intra)\b/i },
+  // FQDN 형태(label.label.suffix, 점 2개 이상)만 — config.corp / data.internal 같은 일반 코드 오탐 방지.
+  { kind: "private-host", re: /\b[a-z0-9-]+\.[a-z0-9-]+\.(?:internal|corp|local|intra)\b/i },
 ];
 
-// 명백한 예시/플레이스홀더는 오탐 제외
-const ALLOWLIST = /(example|placeholder|your[_-]?(key|token)|xxx+|<[^>]+>|\bREDACTED\b|dummy|sample|changeme)/i;
+// 명백한 예시/플레이스홀더 — '매칭된 토큰 자체'에만 적용한다(줄 전체에 적용하지 않음).
+const ALLOWLIST = /(example|placeholder|your[_-]?(key|token)|xxx+|\bREDACTED\b|dummy|sample|changeme)/i;
 
 /** 한 텍스트 블록에서 시크릿 후보를 찾는다. */
 export function scanText(text: string, file?: string): SecretFinding[] {
   const out: SecretFinding[] = [];
   const lines = text.split(/\r?\n/);
   lines.forEach((line, i) => {
-    if (ALLOWLIST.test(line)) return;
     for (const { kind, re } of PATTERNS) {
       const m = re.exec(line);
-      if (m) {
+      // 매칭된 '토큰 자체'가 플레이스홀더일 때만 무시한다.
+      // (줄 전체를 ALLOWLIST 로 버리면, 진짜 시크릿이 example/<tag> 와 같은 줄에 있을 때 통째로 통과되는 우회가 생긴다.)
+      if (m && !ALLOWLIST.test(m[0])) {
         out.push({ file, line: i + 1, kind, preview: redact(line.trim()).slice(0, 120) });
         break; // 한 줄당 한 건이면 충분
       }

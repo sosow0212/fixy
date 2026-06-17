@@ -4,7 +4,7 @@
  * (opencode.jsonc, oh-my-openagent.json, 직접 만든 agent 등)은 절대 덮어쓰지 않는다.
  */
 import { homedir } from "node:os";
-import { join, dirname, basename } from "node:path";
+import { join, dirname, basename, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   existsSync, mkdirSync, lstatSync, readlinkSync, realpathSync,
@@ -30,9 +30,12 @@ export function ensureDir(d: string): void {
 
 function pointsIntoRepo(linkPath: string): boolean {
   try {
-    return realpathSync(linkPath).startsWith(realpathSync(REPO_ROOT));
+    const root = realpathSync(REPO_ROOT);
+    const rp = realpathSync(linkPath);
+    // 경계 검사: 'fixy-agent' 가 'fixy-agent-backup' 을 prefix 로 오탐하지 않도록 sep 으로 구분.
+    return rp === root || rp.startsWith(root + sep);
   } catch {
-    return false;
+    return false; // 깨진 링크(대상 없음) 등은 여기서 false → 호출부에서 별도 처리
   }
 }
 
@@ -45,14 +48,19 @@ function pointsIntoRepo(linkPath: string): boolean {
 export function linkInto(src: string, destDir: string, warns: string[]): string | null {
   ensureDir(destDir);
   const dest = join(destDir, basename(src));
-  if (existsSync(dest) || isSymlink(dest)) {
-    if (isSymlink(dest)) {
-      // 우리 링크거나 깨진 링크면 교체, 남의 링크면 교체(이름이 fixy-* 라 충돌 시 우리 것 우선)
+  if (isSymlink(dest)) {
+    // 우리 레포를 가리키는 링크이거나 깨진 링크(대상 없음)면 교체.
+    // 사용자가 '다른 곳'을 가리키도록 만든 동명 링크는 보존한다(비가역 손실 방지).
+    const broken = !existsSync(dest);
+    if (pointsIntoRepo(dest) || broken) {
       try { unlinkSync(dest); } catch { /* noop */ }
     } else {
-      warns.push(`스킵: ${dest} 는 실제 파일이라 건드리지 않음(사용자 소유로 간주).`);
+      warns.push(`스킵: ${dest} 는 사용자가 만든 링크(외부 대상)라 건드리지 않음.`);
       return null;
     }
+  } else if (existsSync(dest)) {
+    warns.push(`스킵: ${dest} 는 실제 파일이라 건드리지 않음(사용자 소유로 간주).`);
+    return null;
   }
   symlinkSync(src, dest);
   return dest;

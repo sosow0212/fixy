@@ -115,8 +115,25 @@ export async function shareSkills(opts: {
     return { ok: true, message: `(dry-run) 공유 대상 ${relPaths.length}건, 시크릿 없음.`, files: relPaths };
   }
 
+  // ── 공유 대상 저장소 가드 (실제 PR 생성 전에만 — dryRun 은 통과) ──
+  // 깜짝 PR 방지: 대상이 비어 있으면 gh 의 자동 추론(origin→parent)에 맡기지 않고 명확히 중단한다.
+  if (!targets.origin) {
+    return { ok: false, message: "origin remote 가 없습니다 — `git remote add origin <포크-URL>` 후 다시 시도하세요." };
+  }
+  const baseRepo = opts.target === "upstream" ? targets.upstream : targets.fork;
+  if (!baseRepo) {
+    const key = opts.target === "upstream" ? "upstream" : "fork";
+    return { ok: false, message: `repo.${key} 가 fixy.config.json 에 설정되지 않았습니다 — 의도치 않은 레포로 PR 이 나가지 않도록 공유를 중단합니다.` };
+  }
+  const forkOwner = (targets.fork || "").split("/")[0];
+  if (opts.target === "upstream" && !forkOwner) {
+    return { ok: false, message: "upstream 공유에는 repo.fork(내 포크 owner/name)가 필요합니다 — 크로스레포 PR 의 head 를 지정할 수 없습니다." };
+  }
+
   const slug = opts.skills[0]?.replace(/[^a-z0-9-]/gi, "").toLowerCase() || "learning";
   const branch = `${targets.branchPrefix}/skill-${slugDate()}-${slug}`.slice(0, 80);
+  // 브랜치는 항상 origin(내 포크)에 푸시된다. upstream PR 이면 head 를 <fork-owner>:<branch> 로 명시(크로스레포).
+  const head = opts.target === "upstream" ? `${forkOwner}:${branch}` : branch;
 
   // 브랜치 생성(있으면 체크아웃)
   const co = await sh`git checkout -B ${branch}`;
@@ -134,10 +151,8 @@ export async function shareSkills(opts: {
     return { ok: false, message: `푸시 실패(origin=${targets.origin}): ${push.stderr}`, branch };
   }
 
-  // PR 생성 — base 저장소 선택
-  const baseRepo = opts.target === "upstream" ? targets.upstream : targets.fork;
-  const prArgs = ["pr", "create", "--title", opts.title, "--body", opts.body, "--base", targets.defaultBranch, "--head", branch];
-  if (baseRepo) prArgs.push("--repo", baseRepo);
+  // PR 생성 — base 저장소·head 명시(가드를 통과했으므로 baseRepo 는 항상 채워져 있다)
+  const prArgs = ["pr", "create", "--title", opts.title, "--body", opts.body, "--base", targets.defaultBranch, "--head", head, "--repo", baseRepo];
   const pr = await $`gh ${prArgs}`.cwd(paths.home()).nothrow().quiet();
   const prOut = (pr.stdout?.toString() ?? "").trim();
   const prUrl = /(https:\/\/github\.com\/\S+)/.exec(prOut)?.[1];

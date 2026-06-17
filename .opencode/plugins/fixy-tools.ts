@@ -24,7 +24,10 @@ import { shareSkills, listUnsharedSkills, getRepoTargets } from "../lib/github.t
 const z = tool.schema;
 
 export const FixyTools: Plugin = async () => {
+  // 세션별로 이미 recall 한(재사용 카운트한) 스킬 집합 — 세션당 스킬 1회만 uses 를 올린다.
+  const recalledPerSession = new Map<string, Set<string>>();
   return {
+    dispose: async () => recalledPerSession.clear(),
     tool: {
       fixy_recall: tool({
         description:
@@ -33,7 +36,7 @@ export const FixyTools: Plugin = async () => {
           query: z.string().describe("작업/문제 설명 또는 키워드"),
           limit: z.number().optional().describe("최대 반환 개수(기본 3)"),
         },
-        async execute(args) {
+        async execute(args, context) {
           const skills = listSkills();
           if (skills.length === 0) return "학습된 스킬이 아직 없습니다.";
           const qTags = extractTags(args.query, 12);
@@ -45,10 +48,19 @@ export const FixyTools: Plugin = async () => {
             .slice(0, args.limit ?? 3);
           if (scored.length === 0) return "관련 스킬을 찾지 못했습니다. 새로 익히면 fixy_note 로 기록하세요.";
 
+          // 재사용(uses) 카운트는 '세션당 스킬 1회'만 증가시킨다 —
+          // 작업 전 투기적·반복 recall 로 L3 승급 게이트(uses>=minUses)가 오염되는 것을 막는다.
+          const seen = recalledPerSession.get(context.sessionID) ?? new Set<string>();
+          recalledPerSession.set(context.sessionID, seen);
+
           const lines = scored.map(({ s }) => {
-            incrementUse(s.name); // 재사용 = L3 승급 신호
+            let uses = s.uses;
+            if (!seen.has(s.name)) {
+              uses = incrementUse(s.name); // 이 세션에서 처음 떠올린 스킬만 +1
+              seen.add(s.name);
+            }
             const excerpt = s.doc.body.split("\n").slice(0, 24).join("\n");
-            return `### ${s.name}  _(L${s.level} · ${s.scope} · 재사용 ${s.uses + 1}회)_\n${s.description}\n\n${excerpt}`;
+            return `### ${s.name}  _(L${s.level} · ${s.scope} · 재사용 ${uses}회)_\n${s.description}\n\n${excerpt}`;
           });
           return `🔎 관련 스킬 ${scored.length}건:\n\n${lines.join("\n\n---\n\n")}`;
         },

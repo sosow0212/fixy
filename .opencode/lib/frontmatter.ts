@@ -52,7 +52,9 @@ export function stringifySkill(doc: SkillDoc): string {
   const keys = Object.keys(doc.metadata);
   if (keys.length) {
     lines.push("metadata:");
-    for (const k of keys) lines.push(`  ${k}: ${quoteIfNeeded(doc.metadata[k])}`);
+    // metadata 는 opencode 스펙상 '문자열-문자열' 맵이다. 항상 따옴표로 감싸
+    // level: 3(숫자)·created: 2026-06-17(날짜) 같은 YAML 타입 드리프트를 막고 라운드트립을 안정화한다.
+    for (const k of keys) lines.push(`  ${k}: ${quoteMeta(doc.metadata[k])}`);
   }
   lines.push("---");
   lines.push("");
@@ -62,15 +64,27 @@ export function stringifySkill(doc: SkillDoc): string {
 }
 
 function unquote(s: string): string {
-  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+  if (s.length >= 2 && s.startsWith('"') && s.endsWith('"')) {
+    // 인코더가 넣은 이스케이프(\\, \")를 역순으로 정확히 되돌린다(라운드트립 무손실).
+    return s.slice(1, -1).replace(/\\(["\\])/g, "$1");
+  }
+  if (s.length >= 2 && s.startsWith("'") && s.endsWith("'")) {
     return s.slice(1, -1);
   }
   return s;
 }
 
+/** metadata 값은 항상 큰따옴표로 감싸 문자열 타입을 보존한다(unquote 와 대칭). */
+function quoteMeta(s: string): string {
+  return `"${(s ?? "").replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
 function quoteIfNeeded(s: string): string {
   const v = s ?? "";
-  // 콜론/특수문자/선행공백이 있으면 따옴표로 감싼다
-  if (/^[\s]|[:#]|^["'\[{]|[\n]/.test(v) || v === "") return `"${v.replace(/"/g, '\\"')}"`;
+  // 콜론/해시/선행공백/줄바꿈/따옴표·백슬래시 포함 시 큰따옴표로 감싸고
+  // 백슬래시→따옴표 순으로 이스케이프(unquote 와 대칭). 빈 문자열도 감싼다.
+  if (v === "" || /^\s|[:#"'\\\n]|^[[{]/.test(v)) {
+    return `"${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+  }
   return v;
 }

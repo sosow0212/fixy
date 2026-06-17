@@ -19,7 +19,10 @@ interface Pending {
   files: Set<string>;
   agent?: string;
   project: string;
+  ts: number; // 마지막 갱신 시각 — idle 미발생 세션 축출용
 }
+
+const STALE_MS = 30 * 60 * 1000;
 
 const EDIT_TOOLS = /^(edit|write|patch|multiedit|multi_edit|apply_patch)$/i;
 
@@ -54,6 +57,7 @@ export const FixyRecorder: Plugin = async ({ worktree, directory }) => {
         files: new Set(),
         agent: input.agent,
         project,
+        ts: Date.now(),
       });
     },
 
@@ -68,13 +72,19 @@ export const FixyRecorder: Plugin = async ({ worktree, directory }) => {
       }
     },
 
+    dispose: async () => pending.clear(),
+
     event: async ({ event }) => {
       if (event.type !== "session.idle") return;
-      if (recordingOff()) return;
       const sid = event.properties.sessionID;
       const p = pending.get(sid);
-      if (!p) return;
-      pending.delete(sid);
+      pending.delete(sid); // 기록 on/off 와 무관하게 항상 정리(토글로 인한 잔존 방지)
+
+      // idle 을 못 낸 채 끝난 세션 엔트리 축출(누수 방지)
+      const now = Date.now();
+      for (const [k, v] of pending) if (now - v.ts > STALE_MS) pending.delete(k);
+
+      if (!p || recordingOff()) return;
 
       appendEpisode({
         id: newEpisodeId(),
