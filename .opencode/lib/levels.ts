@@ -1,5 +1,5 @@
 /**
- * 수박게임식 레벨 엔진.
+ * 레벨 승급 엔진.
  *
  *   L1 에피소드(개인, memory/episodes.jsonl)
  *     ─ 유사한 게 minEpisodes개 쌓이면 ▶ L2 스킬(skills/<name>/SKILL.md)
