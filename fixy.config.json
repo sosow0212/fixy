@@ -1,0 +1,44 @@
+{
+  "$schema": "./docs/fixy.config.schema.json",
+  "_comment": "fixy-agent 팀 설정. 포크/업스트림 저장소와 레벨 승급 임계치를 정의한다. 팀마다 이 파일만 고치면 된다.",
+
+  "repo": {
+    "_comment": "fork = 내가 학습물을 PR로 올리는 곳(내 포크). upstream = 팀 공통 코어가 모이는 원본. gh CLI 기준 owner/name.",
+    "fork": "",
+    "upstream": "",
+    "defaultBranch": "main",
+    "branchPrefix": "fixy"
+  },
+
+  "levels": {
+    "_comment": "수박게임식 승급 규칙. 낮은 레벨이 임계치만큼 쌓이면 다음 레벨로 합쳐진다.",
+    "l1ToL2": {
+      "minEpisodes": 3,
+      "minTagOverlap": 0.34,
+      "_desc": "유사한 L1 에피소드가 minEpisodes개 이상, 태그 Jaccard 유사도 minTagOverlap 이상이면 L2 스킬 승급 후보"
+    },
+    "l2ToL3": {
+      "minUses": 5,
+      "_desc": "L2 스킬이 minUses회 이상 재사용(recall)되면 팀 공통(L3) 승급 후보"
+    },
+    "l3ToL4": {
+      "minSkills": 3,
+      "_desc": "한 주제(태그)로 L3 스킬이 minSkills개 이상 모이면 팀 규칙(L4)으로 통합 후보"
+    },
+    "requireHumanApproval": ["l3ToL4", "l4ToL5"]
+  },
+
+  "share": {
+    "_comment": "session.idle 자동 공유. 기본 OFF — 켜려면 autoOnIdle=true 또는 env FIXY_AUTOSHARE=1.",
+    "autoOnIdle": false,
+    "minLevelToShare": 2,
+    "secretScan": true
+  },
+
+  "record": {
+    "_comment": "L1 기록 동작. enabled=false 또는 env FIXY_RECORD=0 이면 기록하지 않는다.",
+    "enabled": true,
+    "maxPromptChars": 320,
+    "maxEpisodes": 5000
+  }
+}

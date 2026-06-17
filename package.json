@@ -1,0 +1,24 @@
+{
+  "name": "fixy-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "팀이 함께 키우는 자가개선형 opencode 개발 에이전트. 사용자의 불만·교정을 기록(L1)하고, 쌓이면 스킬(L2)·공통 스킬/서브에이전트(L3)·팀 규칙(L4)·코어(L5)로 승급해 GitHub PR로 공유한다.",
+  "scripts": {
+    "install:agent": "bash install.sh",
+    "uninstall:agent": "bash uninstall.sh",
+    "update:agent": "bash update.sh",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "deps": "cd .opencode && bun install"
+  },
+  "engines": {
+    "bun": ">=1.2.0",
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "1.17.7",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "zod": "^4.1.8"
+  }
+}

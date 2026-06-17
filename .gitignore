@@ -1,0 +1,19 @@
+# 의존성
+node_modules/
+.opencode/node_modules/
+bun.lock
+bun.lockb
+package-lock.json
+
+# 런타임 로컬 메모리(L1) — 개인 기록은 공유하지 않는다
+memory/episodes.jsonl
+memory/*.local.json
+memory/state/
+.fixy-share-last.json
+.install-manifest.json
+
+# OS / 에디터
+.DS_Store
+*.log
+.idea/
+.vscode/

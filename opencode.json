@@ -1,0 +1,8 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "_comment": "이 파일은 fixy-agent 레포 '자체'에서 opencode 를 켰을 때의 설정이다. 실제 팀원 설치는 install.sh 가 전역(~/.config/opencode)으로 심볼릭 링크하며, 기존 사용자 설정(opencode.jsonc, oh-my-openagent 등)은 절대 건드리지 않는다.",
+  "instructions": [
+    ".opencode/rules/core.md",
+    ".opencode/rules/self-improvement.md"
+  ]
+}
