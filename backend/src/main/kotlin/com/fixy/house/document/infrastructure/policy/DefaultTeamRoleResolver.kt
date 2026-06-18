@@ -4,7 +4,7 @@ import com.fixy.house.document.domain.policy.TeamRoleResolver
 import com.fixy.house.document.domain.vo.TeamRole
 import org.springframework.stereotype.Component
 
-@Component
+@Component("documentTeamRoleResolver")
 class DefaultTeamRoleResolver : TeamRoleResolver {
     override fun resolveRole(userId: String, teamId: String): TeamRole? {
         if (userId.isBlank() || teamId.isBlank()) return null

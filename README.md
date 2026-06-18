@@ -32,7 +32,7 @@ SECRET_MASTER_KEY=<base64 32B>
 ### Frontend
 ```bash
 cd frontend
-bun install        # or npm install
+bun install        # 권장 — pnpm 11 은 esbuild 빌드 차단 이슈 있음 (아래 참고)
 bun run dev        # → http://localhost:5173
 ```
 
@@ -42,6 +42,11 @@ cd admin
 bun install
 bun run dev        # → http://localhost:5174
 ```
+
+> **pnpm 11 사용자**: `ERR_PNPM_IGNORED_BUILDS: esbuild` 가 뜨면
+> 1. `pnpm approve-builds` (대화형) → esbuild 승인
+> 2. 또는 `pnpm install --ignore-build-scripts && pnpm rebuild esbuild`
+> 3. 또는 그냥 `bun install` (가장 간단)
 
 ## 인증
 
