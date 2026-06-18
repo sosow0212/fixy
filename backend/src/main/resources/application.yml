@@ -1,0 +1,51 @@
+spring:
+  profiles:
+    active: local
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/fixy_house}
+      auto-index-creation: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+server:
+  port: ${SERVER_PORT:8080}
+  forward-headers-strategy: framework
+  error:
+    include-message: always
+    include-binding-errors: always
+
+logging:
+  level:
+    root: INFO
+    com.fixy.house: DEBUG
+    org.springframework.security: INFO
+    org.springframework.data.mongodb: INFO
+
+# ──────────────────────────────────────────────────────────────
+# fixy-house 자체 설정
+# ──────────────────────────────────────────────────────────────
+app:
+  security:
+    # JWT 서명키 — 최소 32바이트. 운영에서는 외부에서 주입할 것.
+    jwt:
+      secret: ${JWT_SECRET:Y2hhbmdlLW1lLXRoaXMtaXMtYS1kZXYtb25seS1qd3Qtc2VjcmV0LWtleS0xMjM0NTY3OA==}
+      access-token-ttl-minutes: ${JWT_ACCESS_TTL_MIN:30}
+      refresh-token-ttl-days: ${JWT_REFRESH_TTL_DAYS:14}
+    # 시크릿 암호화 마스터키 (Base64 32바이트). 절대 커밋 금지.
+    master-key: ${SECRET_MASTER_KEY:MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=}
+    cors:
+      allowed-origins:
+        - http://localhost:5173
+        - http://localhost:5174
+        - http://localhost:3000
+
+springdoc:
+  swagger-ui:
+    persistAuthorization: true
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
