@@ -11,6 +11,7 @@ import com.fixy.house.secret.domain.exception.SecretExceptionType
 import com.fixy.house.secret.domain.policy.SecretAadBuilder
 import com.fixy.house.secret.domain.policy.SecretCipher
 import com.fixy.house.secret.domain.vo.SecretScope
+import com.fixy.house.team.domain.TeamMemberRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,7 +21,8 @@ import java.util.Base64
 class SecretService(
     private val secretRepository: SecretRepository,
     private val secretCipher: SecretCipher,
-    private val secretAadBuilder: SecretAadBuilder
+    private val secretAadBuilder: SecretAadBuilder,
+    private val teamMemberRepository: TeamMemberRepository
 ) {
 
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -28,8 +30,12 @@ class SecretService(
     @Transactional
     fun create(actorUserId: String, request: CreateSecretRequest): SecretSummaryResponse {
         if (request.scope == SecretScope.TEAM) {
-            if (request.teamId.isNullOrBlank()) {
+            val teamId = request.teamId
+            if (teamId.isNullOrBlank()) {
                 throw CustomException(SecretExceptionType.SECRET_FORBIDDEN, "TEAM 스코프는 teamId 가 필요합니다.")
+            }
+            if (!teamMemberRepository.existsByTeamIdAndUserId(teamId, actorUserId)) {
+                throw CustomException(SecretExceptionType.SECRET_FORBIDDEN, "해당 팀의 멤버만 TEAM 시크릿을 만들 수 있어요.")
             }
         }
 
@@ -59,6 +65,9 @@ class SecretService(
     fun listMine(actorUserId: String, teamId: String?): List<SecretSummaryResponse> {
         val personal = secretRepository.findAllByOwnerUserId(actorUserId)
         val team = if (!teamId.isNullOrBlank()) {
+            if (!teamMemberRepository.existsByTeamIdAndUserId(teamId, actorUserId)) {
+                throw CustomException(SecretExceptionType.SECRET_FORBIDDEN, "해당 팀의 멤버만 팀 시크릿을 조회할 수 있어요.")
+            }
             secretRepository.findAllByTeamId(teamId)
                 .filter { it.ownerUserId == actorUserId || it.scope == SecretScope.TEAM }
         } else {
@@ -138,12 +147,13 @@ class SecretService(
             }
 
             SecretScope.TEAM -> {
-                if (secret.ownerUserId == actorUserId) secret
-                else {
-                    val teamId = secret.teamId
-                        ?: throw CustomException(SecretExceptionType.SECRET_FORBIDDEN, "TEAM 시크릿의 teamId 가 비어 있습니다.")
-                    secret
+                if (secret.ownerUserId == actorUserId) return secret
+                val teamId = secret.teamId
+                    ?: throw CustomException(SecretExceptionType.SECRET_FORBIDDEN, "TEAM 시크릿의 teamId 가 비어 있습니다.")
+                if (!teamMemberRepository.existsByTeamIdAndUserId(teamId, actorUserId)) {
+                    throw CustomException(SecretExceptionType.SECRET_FORBIDDEN, "해당 팀의 멤버만 TEAM 시크릿을 조회할 수 있어요.")
                 }
+                secret
             }
         }
     }

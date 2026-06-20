@@ -26,6 +26,7 @@ import com.fixy.house.session.domain.ToolCall
 import com.fixy.house.session.domain.ToolCallRepository
 import com.fixy.house.session.domain.exception.SessionExceptionType
 import com.fixy.house.session.domain.vo.SessionStatus
+import com.fixy.house.session.domain.vo.ToolCallStatus
 import com.fixy.house.team.application.service.TeamService
 import com.fixy.house.team.domain.vo.TeamRole
 import org.springframework.stereotype.Service
@@ -131,7 +132,7 @@ class SessionService(
             throw CustomException(SessionExceptionType.SESSION_FORBIDDEN)
         }
         toolCall.finish(
-            success = request.status.name == "SUCCESS",
+            success = request.status == ToolCallStatus.SUCCESS,
             resultJson = request.resultJson,
             errorMessage = request.errorMessage,
             finishedAt = request.finishedAt ?: Instant.now()

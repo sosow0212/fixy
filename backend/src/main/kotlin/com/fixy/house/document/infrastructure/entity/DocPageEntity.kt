@@ -85,8 +85,8 @@ class DocPageEntity(
             lastEditorUserId = domain.lastEditorUserId,
             tags = domain.tags
         ).also { entity ->
-            domain.createdAt = entity.createdAt
-            domain.updatedAt = entity.updatedAt
+            entity.createdAt = domain.createdAt
+            entity.updatedAt = domain.updatedAt
         }
     }
 }

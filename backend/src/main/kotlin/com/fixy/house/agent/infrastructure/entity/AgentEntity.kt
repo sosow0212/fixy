@@ -67,8 +67,8 @@ class AgentEntity(
             lastConnectedAt = domain.lastConnectedAt,
             createdByUserId = domain.createdByUserId
         ).also { entity ->
-            domain.createdAt = entity.createdAt
-            domain.updatedAt = entity.updatedAt
+            entity.createdAt = domain.createdAt
+            entity.updatedAt = domain.updatedAt
         }
     }
 }

@@ -93,8 +93,8 @@ class WorkLogEntity(
             dueDate = domain.dueDate,
             completedAt = domain.completedAt
         ).also { entity ->
-            domain.createdAt = entity.createdAt
-            domain.updatedAt = entity.updatedAt
+            entity.createdAt = domain.createdAt
+            entity.updatedAt = domain.updatedAt
         }
     }
 }

@@ -60,12 +60,13 @@ class AuthService(
         val refreshToken = jwtProvider.generateRefreshToken(userId)
         user.updateLastLoginTime()
         userRepository.save(user)
+        val now = Instant.now()
         return TokenResponse(
             grantType = "Bearer",
             accessToken = accessToken,
-            accessTokenExpiresAt = Instant.now().plusSeconds(60L * 30L),
+            accessTokenExpiresAt = now.plusSeconds(jwtProvider.accessTokenTtlSeconds),
             refreshToken = refreshToken,
-            refreshTokenExpiresAt = Instant.now().plusSeconds(60L * 60L * 24L * 14L)
+            refreshTokenExpiresAt = now.plusSeconds(jwtProvider.refreshTokenTtlSeconds)
         )
     }
 }
