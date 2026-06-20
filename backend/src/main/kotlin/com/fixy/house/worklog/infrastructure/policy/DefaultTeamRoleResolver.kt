@@ -11,6 +11,8 @@ class DefaultTeamRoleResolver(
 ) : TeamRoleResolver {
     override fun resolveRole(userId: String, teamId: String): TeamRole? {
         if (userId.isBlank() || teamId.isBlank()) return null
-        return teamMemberMongoRepository.findByTeamIdAndUserId(teamId, userId)?.role
+        val teamRole = teamMemberMongoRepository.findByTeamIdAndUserId(teamId, userId)?.role
+            ?: return null
+        return runCatching { TeamRole.valueOf(teamRole.name) }.getOrNull()
     }
 }
