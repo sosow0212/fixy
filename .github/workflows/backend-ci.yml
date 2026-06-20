@@ -1,0 +1,90 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test & Build (JDK 21)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Gradle 8.10.2
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.10.2
+          cache-disabled: false
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Generate gradle wrapper (if missing)
+        working-directory: backend
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            gradle wrapper --gradle-version 8.10.2
+          fi
+
+      - name: Make gradlew executable
+        working-directory: backend
+        run: chmod +x ./gradlew
+
+      - name: Verify build (compile only)
+        working-directory: backend
+        run: ./gradlew compileKotlin compileTestKotlin --no-daemon --console=plain
+
+      - name: Run unit tests
+        working-directory: backend
+        run: ./gradlew test --no-daemon --console=plain
+
+      - name: Build bootJar (without tests)
+        working-directory: backend
+        run: ./gradlew bootJar -x test --no-daemon --console=plain
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: backend/build/test-results/test/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload test report (HTML)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-report
+          path: backend/build/reports/tests/test/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload bootJar
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-bootjar
+          path: backend/build/libs/
+          retention-days: 7
+          if-no-files-found: ignore

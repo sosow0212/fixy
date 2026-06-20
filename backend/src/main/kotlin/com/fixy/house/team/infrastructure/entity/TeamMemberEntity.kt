@@ -52,8 +52,8 @@ class TeamMemberEntity(
             role = domain.role,
             joinedAt = domain.joinedAt
         ).also { entity ->
-            domain.createdAt = entity.createdAt
-            domain.updatedAt = entity.updatedAt
+            entity.createdAt = domain.createdAt
+            entity.updatedAt = domain.updatedAt
         }
     }
 }

@@ -47,8 +47,8 @@ class TeamEntity(
             ownerUserId = domain.ownerUserId,
             description = domain.description
         ).also { entity ->
-            domain.createdAt = entity.createdAt
-            domain.updatedAt = entity.updatedAt
+            entity.createdAt = domain.createdAt
+            entity.updatedAt = domain.updatedAt
         }
     }
 }

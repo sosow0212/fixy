@@ -75,8 +75,8 @@ class InvitationEntity(
             acceptedAt = domain.acceptedAt,
             acceptedByUserId = domain.acceptedByUserId
         ).also { entity ->
-            domain.createdAt = entity.createdAt
-            domain.updatedAt = entity.updatedAt
+            entity.createdAt = domain.createdAt
+            entity.updatedAt = domain.updatedAt
         }
     }
 }

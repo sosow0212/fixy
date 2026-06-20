@@ -70,9 +70,9 @@ class InvitationService(
                 expiresAt = expiresAt
             )
         )
-        log.warn(
-            "[DEV] Invitation created id={} email={} token={}",
-            invitation.id, normalizedEmail, rawToken
+        log.info(
+            "Invitation created: id={}, email={}, teamId={}, role={}",
+            invitation.id, normalizedEmail, teamId, request.role
         )
         return InvitationResponse.from(invitation, rawToken)
     }

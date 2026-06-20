@@ -9,6 +9,7 @@ import com.fixy.house.secret.domain.policy.SecretAadBuilder
 import com.fixy.house.secret.domain.policy.SecretCipher
 import com.fixy.house.secret.domain.vo.SecretScope
 import com.fixy.house.global.exceptions.CustomException
+import com.fixy.house.team.domain.TeamMemberRepository
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -20,10 +21,11 @@ import io.mockk.verify
 
 class SecretServiceTest : DescribeSpec({
 
-    val secretRepository: SecretRepository = mockk(relaxed = true)
-    val secretCipher: SecretCipher = mockk(relaxed = true)
-    val secretAadBuilder: SecretAadBuilder = mockk()
-    val service = SecretService(secretRepository, secretCipher, secretAadBuilder)
+    val secretRepository = mockk<SecretRepository>(relaxed = true)
+    val secretCipher = mockk<SecretCipher>(relaxed = true)
+    val secretAadBuilder = mockk<SecretAadBuilder>()
+    val teamMemberRepository = mockk<TeamMemberRepository>(relaxed = true)
+    val service = SecretService(secretRepository, secretCipher, secretAadBuilder, teamMemberRepository)
 
     fun stubSecret(
         id: String = "s-1",
@@ -53,7 +55,7 @@ class SecretServiceTest : DescribeSpec({
     )
 
     beforeEach {
-        clearMocks(secretRepository, secretCipher, secretAadBuilder)
+        clearMocks(secretRepository, secretCipher, secretAadBuilder, teamMemberRepository)
     }
 
     describe("create") {
@@ -74,6 +76,14 @@ class SecretServiceTest : DescribeSpec({
         it("TEAM scope + teamId 누락이면 FORBIDDEN") {
             val ex = shouldThrow<CustomException> {
                 service.create("actor", CreateSecretRequest(key = "K", value = "v", scope = SecretScope.TEAM, teamId = null))
+            }
+            ex.getExceptionType() shouldBe SecretExceptionType.SECRET_FORBIDDEN
+        }
+
+        it("TEAM scope + 비멤버면 FORBIDDEN") {
+            every { teamMemberRepository.existsByTeamIdAndUserId("t1", "actor") } returns false
+            val ex = shouldThrow<CustomException> {
+                service.create("actor", CreateSecretRequest(key = "K", value = "v", scope = SecretScope.TEAM, teamId = "t1"))
             }
             ex.getExceptionType() shouldBe SecretExceptionType.SECRET_FORBIDDEN
         }
@@ -145,6 +155,12 @@ class SecretServiceTest : DescribeSpec({
             val response = service.listMine("actor", teamId = null)
             response.size shouldBe 1
             response.first().key shouldBe "DB_PWD"
+        }
+
+        it("TEAM 조회 시 비멤버면 FORBIDDEN") {
+            every { teamMemberRepository.existsByTeamIdAndUserId("t1", "actor") } returns false
+            val ex = shouldThrow<CustomException> { service.listMine("actor", teamId = "t1") }
+            ex.getExceptionType() shouldBe SecretExceptionType.SECRET_FORBIDDEN
         }
     }
 })

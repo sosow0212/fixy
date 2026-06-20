@@ -1,5 +1,7 @@
 package com.fixy.house.global.config
 
+import com.fixy.house.agent.application.service.AgentService
+import com.fixy.house.global.security.AgentKeyAuthenticationFilter
 import com.fixy.house.global.security.JwtFilter
 import com.fixy.house.global.security.JwtProvider
 import org.springframework.beans.factory.annotation.Value
@@ -19,6 +21,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 @EnableWebSecurity
 class SecurityConfig(
     private val jwtProvider: JwtProvider,
+    private val agentService: AgentService,
     @Value("\${app.security.cors.allowed-origins}")
     private val allowedOrigins: List<String>
 ) {
@@ -47,6 +50,10 @@ class SecurityConfig(
                     response.sendError(403)
                 }
             }
+            .addFilterBefore(
+                AgentKeyAuthenticationFilter(agentService),
+                UsernamePasswordAuthenticationFilter::class.java
+            )
             .addFilterBefore(
                 JwtFilter(jwtProvider),
                 UsernamePasswordAuthenticationFilter::class.java

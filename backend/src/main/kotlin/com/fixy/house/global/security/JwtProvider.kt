@@ -31,6 +31,12 @@ class JwtProvider(
         Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey))
     }
 
+    val accessTokenTtlSeconds: Long
+        get() = accessTokenTtlMinutes * 60L
+
+    val refreshTokenTtlSeconds: Long
+        get() = refreshTokenTtlDays * 24L * 60L * 60L
+
     fun generateAccessToken(userId: String, role: UserRole): String =
         generateToken(userId, role, accessTokenTtlMinutes * 60_000L)
 
