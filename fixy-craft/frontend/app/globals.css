@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  background: #0b0d10;
+  color: #e6e8eb;
+}
+
+/* 다크 톤에 맞춘 스크롤바 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #2a2f38; border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
