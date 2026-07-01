@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "fixy.config.json",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "repo": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "fork": { "type": "string", "description": "내 포크 저장소 owner/name" },
+        "upstream": { "type": "string", "description": "팀 원본 저장소 owner/name" },
+        "defaultBranch": { "type": "string", "default": "main" },
+        "branchPrefix": { "type": "string", "default": "fixy" }
+      }
+    },
+    "levels": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "l1ToL2": {
+          "type": "object",
+          "properties": {
+            "minEpisodes": { "type": "integer", "minimum": 1 },
+            "minTagOverlap": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "l2ToL3": {
+          "type": "object",
+          "properties": { "minUses": { "type": "integer", "minimum": 1 } }
+        },
+        "l3ToL4": {
+          "type": "object",
+          "properties": { "minSkills": { "type": "integer", "minimum": 1 } }
+        },
+        "requireHumanApproval": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "share": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "autoOnIdle": { "type": "boolean", "default": false },
+        "minLevelToShare": { "type": "integer", "minimum": 1 },
+        "secretScan": { "type": "boolean", "default": true }
+      }
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "maxPromptChars": { "type": "integer", "minimum": 0 },
+        "maxEpisodes": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

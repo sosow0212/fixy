@@ -1,0 +1,10 @@
+{
+  "name": "@fixy-agent/opencode",
+  "private": true,
+  "type": "module",
+  "description": "fixy-agent 의 플러그인/툴 런타임 의존성. install.sh 가 여기서 `bun install` 한다.",
+  "dependencies": {
+    "@opencode-ai/plugin": "1.17.7",
+    "zod": "4.1.8"
+  }
+}
