@@ -1,0 +1,13 @@
+.DS_Store
+node_modules/
+dist/
+build/
+.gradle/
+.idea/
+*.iml
+.vscode/
+out/
+.env
+.env.local
+.env.*.local
+*.log

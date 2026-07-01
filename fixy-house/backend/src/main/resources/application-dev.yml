@@ -1,0 +1,9 @@
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/fixy_house_dev}
+      auto-index-creation: false
+
+logging:
+  level:
+    com.fixy.house: DEBUG

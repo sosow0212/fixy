@@ -1,0 +1,9 @@
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/fixy_house_local}
+      auto-index-creation: true
+
+logging:
+  level:
+    com.fixy.house: TRACE
